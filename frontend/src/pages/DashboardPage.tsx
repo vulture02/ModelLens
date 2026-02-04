@@ -3,7 +3,7 @@ import { useState, useRef } from "react"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
 import Sidebar from "../components/Sidebar"
-import { RotateCcw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react"
+import { RotateCcw, RotateCw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { ModelProvider } from "../three/context/ModelContext"
 import ModelViewer from "../three/viewer/ModelViewer"
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
   const viewerRef = useRef<HTMLDivElement>(null)
+  const modelViewerRef = useRef<any>(null)
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -19,6 +20,22 @@ export default function DashboardPage() {
     } else {
       document.exitFullscreen()
     }
+  }
+
+  const handleZoomIn = () => {
+    modelViewerRef.current?.zoomIn()
+  }
+
+  const handleZoomOut = () => {
+    modelViewerRef.current?.zoomOut()
+  }
+
+  const handleRotateLeft = () => {
+    modelViewerRef.current?.rotateLeft()
+  }
+
+  const handleRotateRight = () => {
+    modelViewerRef.current?.rotateRight()
   }
 
   return (
@@ -43,6 +60,7 @@ export default function DashboardPage() {
                     size="icon"
                     className="h-8 w-8 text-gray-500 hover:text-gray-700"
                     title="Zoom In"
+                    onClick={handleZoomIn}
                   >
                     <ZoomIn className="w-4 h-4" />
                   </Button>
@@ -51,6 +69,7 @@ export default function DashboardPage() {
                     size="icon"
                     className="h-8 w-8 text-gray-500 hover:text-gray-700"
                     title="Zoom Out"
+                    onClick={handleZoomOut}
                   >
                     <ZoomOut className="w-4 h-4" />
                   </Button>
@@ -58,9 +77,19 @@ export default function DashboardPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-gray-500 hover:text-gray-700"
-                    title="Reset View"
+                    title="Rotate Left"
+                    onClick={handleRotateLeft}
                   >
                     <RotateCcw className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                    title="Rotate Right"
+                    onClick={handleRotateRight}
+                  >
+                    <RotateCw className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -76,7 +105,7 @@ export default function DashboardPage() {
 
               {/* Viewer Content */}
               <div className="flex-1">
-                <ModelViewer />
+                <ModelViewer ref={modelViewerRef} />
               </div>
             </div>
           </main>

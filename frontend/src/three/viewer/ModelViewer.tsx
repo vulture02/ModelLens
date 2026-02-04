@@ -1,12 +1,19 @@
 // three/viewer/ModelViewer.tsx
 import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Environment } from "@react-three/drei"
-import { Suspense, useEffect, useRef } from "react"
+import { Suspense, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import { Box3, Vector3, PerspectiveCamera } from "three"
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import { useModel } from "../context/ModelContext"
 import ModelLoader from "./ModelLoader"
 import { Box } from "lucide-react"
+
+interface ModelViewerRef {
+  zoomIn: () => void
+  zoomOut: () => void
+  rotateLeft: () => void
+  rotateRight: () => void
+}
 
 // Camera auto-fit component
 const FitCamera: React.FC<{ controlsRef: React.RefObject<OrbitControlsImpl | null> }> = ({ controlsRef }) => {
@@ -46,7 +53,7 @@ const CanvasLoader = () => {
   )
 }
 
-const ModelViewer: React.FC = () => {
+const ModelViewer = forwardRef<ModelViewerRef>((_props, ref) => {
   const { modelUrl, modelType } = useModel()
   const controlsRef = useRef<OrbitControlsImpl>(null)
 
@@ -56,6 +63,45 @@ const ModelViewer: React.FC = () => {
       controlsRef.current.update()
     }
   }, [modelUrl])
+
+  useImperativeHandle(ref, () => ({
+    zoomIn: () => {
+      if (controlsRef.current) {
+        const camera = controlsRef.current.object as PerspectiveCamera
+        const distance = camera.position.distanceTo(controlsRef.current.target)
+        const direction = camera.position.clone().sub(controlsRef.current.target).normalize()
+        camera.position.add(direction.multiplyScalar(-distance * 0.1))
+        controlsRef.current.update()
+      }
+    },
+    zoomOut: () => {
+      if (controlsRef.current) {
+        const camera = controlsRef.current.object as PerspectiveCamera
+        const distance = camera.position.distanceTo(controlsRef.current.target)
+        const direction = camera.position.clone().sub(controlsRef.current.target).normalize()
+        camera.position.add(direction.multiplyScalar(distance * 0.1))
+        controlsRef.current.update()
+      }
+    },
+    rotateLeft: () => {
+      if (controlsRef.current) {
+        const camera = controlsRef.current.object as PerspectiveCamera
+        const target = controlsRef.current.target
+        const angle = Math.PI / 8 // 22.5 degrees
+        camera.position.sub(target).applyAxisAngle(new Vector3(0, 1, 0), angle).add(target)
+        controlsRef.current.update()
+      }
+    },
+    rotateRight: () => {
+      if (controlsRef.current) {
+        const camera = controlsRef.current.object as PerspectiveCamera
+        const target = controlsRef.current.target
+        const angle = -Math.PI / 8 // -22.5 degrees
+        camera.position.sub(target).applyAxisAngle(new Vector3(0, 1, 0), angle).add(target)
+        controlsRef.current.update()
+      }
+    },
+  }))
 
   // No model uploaded - show placeholder
   if (!modelUrl || !modelType) {
@@ -93,6 +139,8 @@ const ModelViewer: React.FC = () => {
       </div>
     </div>
   )
-}
+})
+
+ModelViewer.displayName = 'ModelViewer'
 
 export default ModelViewer
