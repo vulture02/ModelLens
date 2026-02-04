@@ -1,4 +1,3 @@
-// pages/DashboardPage.tsx
 import { useState, useRef } from "react"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"

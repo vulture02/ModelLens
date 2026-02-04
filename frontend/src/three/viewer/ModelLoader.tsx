@@ -1,4 +1,3 @@
-// three/viewer/ModelLoader.tsx
 import { useEffect, useRef } from "react"
 import { Group, Box3, Vector3, Mesh, MeshStandardMaterial, Object3D, AnimationClip, AnimationAction } from "three"
 import { useLoader } from "@react-three/fiber"

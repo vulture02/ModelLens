@@ -1,4 +1,3 @@
-// three/viewer/ModelViewer.tsx
 import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Environment } from "@react-three/drei"
 import { Suspense, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
@@ -6,6 +5,7 @@ import { Box3, Vector3, PerspectiveCamera } from "three"
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import { useModel } from "../context/ModelContext"
 import ModelLoader from "./ModelLoader"
+import Loader from "./Loader"
 import { Box } from "lucide-react"
 
 interface ModelViewerRef {
@@ -41,16 +41,6 @@ const FitCamera: React.FC<{ controlsRef: React.RefObject<OrbitControlsImpl | nul
   }, [scene, controlsRef])
 
   return null
-}
-
-// Loading spinner inside canvas
-const CanvasLoader = () => {
-  return (
-    <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#4f46e5" wireframe />
-    </mesh>
-  )
 }
 
 const ModelViewer = forwardRef<ModelViewerRef>((_props, ref) => {
@@ -123,7 +113,7 @@ const ModelViewer = forwardRef<ModelViewerRef>((_props, ref) => {
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <directionalLight position={[-5, -5, -5]} intensity={0.4} />
 
-        <Suspense fallback={<CanvasLoader />}>
+        <Suspense fallback={<Loader />}>
           <ModelLoader key={modelUrl} path={modelUrl} type={modelType} />
           <FitCamera controlsRef={controlsRef} />
         </Suspense>
