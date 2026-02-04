@@ -1,7 +1,9 @@
-
 import { useRef, useState } from "react"
-import { Button } from "./ui/button"
+
 import { Upload, File, X, CheckCircle, AlertCircle } from "lucide-react"
+import { useModel, type ModelType} from "../three/context/ModelContext"
+import { Button } from "./ui/button"
+import { Input } from "./ui/input"
 
 interface SidebarProps {
   onFileUpload: (file: File | null) => void
@@ -12,6 +14,8 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle")
+  
+  const { setModel, clearModel } = useModel()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -21,12 +25,15 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
   }
 
   const processFile = (file: File) => {
-    // Check file type
-    const validTypes = [".obj", ".glb", ".gltf", ".fbx", ".stl"]
-    const fileExt = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
-    
-    if (validTypes.includes(fileExt)) {
+    const ext = file.name.split(".").pop()?.toLowerCase()
+    const validTypes = ["obj", "glb", "gltf", "fbx", "stl"]
+
+    if (ext && validTypes.includes(ext)) {
       onFileUpload(file)
+
+      const url = URL.createObjectURL(file)
+      setModel(url, ext as ModelType)
+
       setUploadStatus("success")
     } else {
       setUploadStatus("error")
@@ -54,6 +61,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
 
   const removeFile = () => {
     onFileUpload(null)
+    clearModel()
     setUploadStatus("idle")
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -75,7 +83,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
             : "border-gray-200 hover:border-gray-300 bg-gray-50"
         }`}
       >
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           accept=".obj,.glb,.gltf,.fbx,.stl"
@@ -87,9 +95,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
           <Upload className={`w-6 h-6 ${isDragging ? "text-blue-500" : "text-gray-400"}`} />
         </div>
 
-        <p className="text-sm text-gray-600 mb-1">
-          Drag & drop your file here
-        </p>
+        <p className="text-sm text-gray-600 mb-1">Drag & drop your file here</p>
         <p className="text-xs text-gray-400 mb-3">or</p>
 
         <Button
@@ -104,7 +110,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
         </p>
       </div>
 
-      {/* Status Messages */}
+      {/* Error Message */}
       {uploadStatus === "error" && (
         <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-600">
           <AlertCircle className="w-4 h-4" />
@@ -120,12 +126,9 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
               <CheckCircle className="w-4 h-4 text-green-600" />
               <span className="text-sm font-medium text-green-700">Uploaded</span>
             </div>
-            <button
-              onClick={removeFile}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <Button onClick={removeFile} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="mt-2 flex items-center gap-2">
