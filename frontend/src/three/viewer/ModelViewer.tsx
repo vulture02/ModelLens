@@ -1,17 +1,20 @@
+// three/viewer/ModelViewer.tsx
 import { Canvas, useThree } from "@react-three/fiber"
 import { OrbitControls, Environment } from "@react-three/drei"
 import { Suspense, useEffect, useRef } from "react"
-import { Box3, Vector3 } from "three"
+import { Box3, Vector3, PerspectiveCamera } from "three"
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import { useModel } from "../context/ModelContext"
 import ModelLoader from "./ModelLoader"
-import { Box, Loader2 } from "lucide-react"
+import { Box } from "lucide-react"
 
 // Camera auto-fit component
-const FitCamera: React.FC = () => {
-  const { scene, camera } = useThree()
+const FitCamera: React.FC<{ controlsRef: React.RefObject<OrbitControlsImpl | null> }> = ({ controlsRef }) => {
+  const { scene } = useThree()
 
   useEffect(() => {
+    if (!controlsRef.current) return
+
     const box = new Box3().setFromObject(scene)
     const size = box.getSize(new Vector3())
     const center = box.getCenter(new Vector3())
@@ -19,12 +22,16 @@ const FitCamera: React.FC = () => {
     const maxDim = Math.max(size.x, size.y, size.z)
     const distance = maxDim * 1.5
 
+    const camera = controlsRef.current.object as PerspectiveCamera
     camera.position.set(center.x, center.y, center.z + distance)
     camera.near = distance / 100
     camera.far = distance * 100
     camera.updateProjectionMatrix()
     camera.lookAt(center)
-  }, [scene, camera])
+
+    controlsRef.current.target.set(center.x, center.y, center.z)
+    controlsRef.current.update()
+  }, [scene, controlsRef])
 
   return null
 }
@@ -72,7 +79,7 @@ const ModelViewer: React.FC = () => {
 
         <Suspense fallback={<CanvasLoader />}>
           <ModelLoader key={modelUrl} path={modelUrl} type={modelType} />
-          <FitCamera />
+          <FitCamera controlsRef={controlsRef} />
         </Suspense>
 
         <OrbitControls ref={controlsRef} enableZoom enableRotate enablePan={false} />

@@ -1,9 +1,8 @@
+// components/Sidebar.tsx
 import { useRef, useState } from "react"
-
+import { Button } from "./ui/button"
 import { Upload, File, X, CheckCircle, AlertCircle } from "lucide-react"
 import { useModel, type ModelType} from "../three/context/ModelContext"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
 
 interface SidebarProps {
   onFileUpload: (file: File | null) => void
@@ -83,7 +82,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
             : "border-gray-200 hover:border-gray-300 bg-gray-50"
         }`}
       >
-        <Input
+        <input
           ref={fileInputRef}
           type="file"
           accept=".obj,.glb,.gltf,.fbx,.stl"
@@ -126,9 +125,9 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
               <CheckCircle className="w-4 h-4 text-green-600" />
               <span className="text-sm font-medium text-green-700">Uploaded</span>
             </div>
-            <Button onClick={removeFile} className="text-gray-400 hover:text-gray-600">
+            <button onClick={removeFile} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
-            </Button>
+            </button>
           </div>
 
           <div className="mt-2 flex items-center gap-2">

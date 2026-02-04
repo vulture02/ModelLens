@@ -1,5 +1,6 @@
+// three/viewer/ModelLoader.tsx
 import { useEffect, useRef } from "react"
-import { Group, Box3, Vector3, Mesh, MeshStandardMaterial } from "three"
+import { Group, Box3, Vector3, Mesh, MeshStandardMaterial, Object3D, AnimationClip, AnimationAction } from "three"
 import { useLoader } from "@react-three/fiber"
 import { useGLTF, useAnimations } from "@react-three/drei"
 import { FBXLoader } from "three-stdlib"
@@ -17,8 +18,8 @@ function CenterAndPlay({
   animations,
   groupRef,
 }: {
-  scene: Group | any
-  animations?: any[]
+  scene: Object3D
+  animations?: AnimationClip[]
   groupRef: React.RefObject<Group | null>
 }) {
   const { actions } = useAnimations(animations ?? [], groupRef)
@@ -29,7 +30,7 @@ function CenterAndPlay({
     scene.updateWorldMatrix(true, true)
 
     // Play all animations
-    Object.values(actions ?? {}).forEach((a: any) => a?.play())
+    Object.values(actions ?? {}).forEach((a: AnimationAction | null) => a?.play())
 
     // Center the model at origin
     const box = new Box3().setFromObject(scene)

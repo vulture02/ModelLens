@@ -1,3 +1,4 @@
+// pages/DashboardPage.tsx
 import { useState, useRef } from "react"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
@@ -9,16 +10,14 @@ import ModelViewer from "../three/viewer/ModelViewer"
 
 export default function DashboardPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+
   const viewerRef = useRef<HTMLDivElement>(null)
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
       viewerRef.current?.requestFullscreen()
-      setIsFullscreen(true)
     } else {
       document.exitFullscreen()
-      setIsFullscreen(false)
     }
   }
 

@@ -23,8 +23,33 @@ export default function RegisterPage() {
 
     if (Object.keys(errs).length === 0) {
       setIsLoading(true)
+
+      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      localStorage.setItem("isLoggedIn", "true")
+
+      // Store user data
+      const users = JSON.parse(localStorage.getItem("users") || "[]")
+      const newUser = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password // In real app, this would be hashed
+      }
+      users.push(newUser)
+      localStorage.setItem("users", JSON.stringify(users))
+
+      // Generate dummy JWT-like token
+      const token = btoa(JSON.stringify({
+        userId: newUser.id,
+        email: newUser.email,
+        exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      }))
+
+      console.log("Generated JWT Token:", token)
+      console.log("Decoded Token Payload:", JSON.parse(atob(token)))
+
+      localStorage.setItem("authToken", token)
+      localStorage.setItem("currentUser", JSON.stringify(newUser))
       navigate("/dashboard")
     }
   }
