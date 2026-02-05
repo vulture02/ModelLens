@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react"
+import { useSearchParams } from "react-router-dom"  
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [searchParams]=useSearchParams()
+  const redirectUrl=searchParams.get("redirect_url");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +49,11 @@ export default function LoginPage() {
 
       localStorage.setItem("authToken", token)
       localStorage.setItem("currentUser", JSON.stringify(user))
+      if(redirectUrl){
+        navigate(decodeURIComponent(redirectUrl))
+      }else{
         navigate("/dashboard")
+      }
       } else {
         setErrors({ general: "Invalid email or password" })
       }
@@ -146,7 +153,7 @@ export default function LoginPage() {
           {/* Register Link */}
           <p className="text-center text-gray-500 text-sm mt-6">
             Don't have an account?{" "}
-            <a href="/register" className="text-blue-600 hover:underline font-medium">
+            <a href={`/register${window.location.search}`} className="text-blue-600 hover:underline font-medium">
               Sign up
             </a>
           </p>

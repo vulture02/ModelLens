@@ -1,11 +1,22 @@
-import { Navigate } from "react-router-dom"
+import { Navigate,useLocation } from "react-router-dom"
 import type { JSX } from "react/jsx-runtime"
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
   const token = localStorage.getItem("authToken")
+  const location=useLocation()
+
 
   if (!token) {
-    return <Navigate to="/login" replace />
+
+    const redirectUrl=encodeURIComponent(
+      location.pathname + location.search
+    )
+    return (
+      <Navigate
+          to={`/login?redirect_url=${redirectUrl}`}
+          replace
+       />
+    )
   }
 
   try {
@@ -19,7 +30,7 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
       return <Navigate to="/login" replace />
     }
 
-    return children
+  return children
   } catch {
     // Invalid token, clear it
     localStorage.removeItem("authToken")

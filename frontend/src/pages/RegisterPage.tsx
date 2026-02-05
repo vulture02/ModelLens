@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { validateRegister } from "../utils/validation"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input"
@@ -15,6 +15,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [searchParams]=useSearchParams()
+  const redirectUrl=searchParams.get("redirect_url");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +52,11 @@ export default function RegisterPage() {
 
       localStorage.setItem("authToken", token)
       localStorage.setItem("currentUser", JSON.stringify(newUser))
-      navigate("/dashboard")
+      if(redirectUrl){
+        navigate(decodeURIComponent(redirectUrl))
+      }else{
+        navigate("/dashboard")
+      }
     }
   }
 

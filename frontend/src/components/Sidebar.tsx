@@ -141,16 +141,6 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
           </div>
         </div>
       )}
-
-      {/* Quick Tips */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Tips</h3>
-        <ul className="text-xs text-gray-500 space-y-1">
-          <li>• Max file size: 50MB</li>
-          <li>• Use GLB for best performance</li>
-          <li>• Optimize textures before upload</li>
-        </ul>
-      </div>
     </aside>
   )
 }

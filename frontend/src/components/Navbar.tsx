@@ -20,7 +20,12 @@ export default function Navbar() {
         <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
           <Box className="w-5 h-5 text-white" />
         </div>
-        <span className="font-semibold text-gray-800">ModelLens</span>
+        <span className="font-semibold text-gray-800">Meshmind</span>
+      </Link>
+      <Link to="/dummy">
+        <Button variant="outline" className="mr-9">
+            About
+        </Button>
       </Link>
 
       <div className="flex items-center gap-4">
