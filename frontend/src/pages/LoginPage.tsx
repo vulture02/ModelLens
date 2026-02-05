@@ -86,7 +86,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                  className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
               {errors.email && (
@@ -106,7 +106,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-11 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                  className="pl-10 pr-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
                 <button
                   type="button"
