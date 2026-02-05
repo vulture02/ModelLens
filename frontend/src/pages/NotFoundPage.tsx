@@ -4,31 +4,32 @@ import { Home, ArrowLeft } from "lucide-react"
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="text-center max-w-md mx-auto">
-        {/* 404 Illustration */}
-        <div className="mb-8">
-          <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center">
-            <span className="text-6xl font-bold text-white">404</span>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Page Not Found</h1>
-          <p className="text-gray-600 text-lg">
-            Oops! The page you're looking for doesn't exist or has been moved.
-          </p>
-        </div>
+        {/* 404 Number */}
+        <h1 className="text-8xl font-bold text-gray-900 mb-4">
+          404
+        </h1>
+
+        {/* Error Message */}
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+          Page Not Found
+        </h2>
+        <p className="text-gray-600 mb-8">
+          Sorry, the page you're looking for doesn't exist or has been moved.
+        </p>
 
         {/* Action Buttons */}
-        <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/dashboard">
-            <Button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium">
+            <Button className="w-full sm:w-auto">
               <Home className="w-4 h-4 mr-2" />
-              Go to Dashboard
+              Go Home
             </Button>
           </Link>
 
           <Button
             variant="outline"
-            className="w-full"
             onClick={() => window.history.back()}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -36,9 +37,17 @@ export default function NotFoundPage() {
           </Button>
         </div>
 
-        {/* Additional Help */}
-        <div className="mt-8 text-sm text-gray-500">
-          <p>If you believe this is an error, please contact support.</p>
+        {/* Help Links */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <p className="text-sm text-gray-500 mb-2">Need help?</p>
+          <div className="flex gap-4 justify-center text-sm">
+            <Link to="/help" className="text-blue-600 hover:underline">
+              Help Center
+            </Link>
+            <Link to="/contact" className="text-blue-600 hover:underline">
+              Contact Us
+            </Link>
+          </div>
         </div>
       </div>
     </div>
