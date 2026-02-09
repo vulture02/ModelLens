@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { Upload, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useModel, type ModelType } from "../three/context/ModelContext";
 import api from "../lib/api";
 
@@ -13,7 +13,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] =
-    useState<"idle" | "success" | "error">("idle");
+    useState<"idle" | "uploading" | "success" | "error">("idle");
 
   const { setModel, clearModel } = useModel();
 
@@ -33,6 +33,9 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
     }
 
     try {
+      // Set uploading status to disable UI
+      setUploadStatus("uploading");
+
       const formData = new FormData();
       formData.append("file", file);
 
@@ -57,12 +60,16 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
     } catch (error) {
       console.error("Backend upload failed:", error);
       setUploadStatus("error");
+      setTimeout(() => setUploadStatus("idle"), 3000);
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
+    // Don't allow drag if uploading
+    if (uploadStatus !== "uploading") {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = () => setIsDragging(false);
@@ -70,6 +77,10 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    
+    // Don't allow drop if uploading
+    if (uploadStatus === "uploading") return;
+    
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
   };
@@ -83,6 +94,9 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const isUploading = uploadStatus === "uploading";
+  const isDisabled = isUploading || uploadStatus === "success";
+
   return (
     <aside className="w-full md:w-72 bg-white border-r border-gray-100 p-4">
       <h2 className="font-semibold text-gray-800 mb-4">Upload Model</h2>
@@ -93,7 +107,9 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-          isDragging
+          isDisabled
+            ? "border-gray-200 bg-gray-100 cursor-not-allowed opacity-60"
+            : isDragging
             ? "border-blue-500 bg-blue-50"
             : "border-gray-300 bg-gray-50"
         }`}
@@ -103,28 +119,55 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
           type="file"
           accept=".obj,.glb,.gltf,.fbx,.stl"
           onChange={handleFileChange}
+          disabled={isDisabled}
           className="hidden"
         />
 
-        <Upload className="w-10 h-10 mx-auto mb-3 text-gray-500" />
+        {isUploading ? (
+          <Loader2 className="w-10 h-10 mx-auto mb-3 text-blue-500 animate-spin" />
+        ) : (
+          <Upload className="w-10 h-10 mx-auto mb-3 text-gray-500" />
+        )}
 
         <p className="text-sm text-gray-600 mb-2">
-          Drag & drop your file here
+          {isUploading ? "Uploading and processing..." : "Drag & drop your file here"}
         </p>
 
-        <p className="text-xs text-gray-400 mb-4">or</p>
+        {!isUploading && <p className="text-xs text-gray-400 mb-4">or</p>}
 
         <Button
-          onClick={() => fileInputRef.current?.click()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
+          onClick={() => !isDisabled && fileInputRef.current?.click()}
+          disabled={isDisabled}
+          className={`px-4 py-2 rounded-md ${
+            isDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+          }`}
         >
-          Browse Files
+          {isUploading ? "Processing..." : "Browse Files"}
         </Button>
 
-        <p className="text-xs text-gray-400 mt-4">
-          Supported: OBJ, GLB, GLTF, FBX, STL
-        </p>
+        {!isUploading && (
+          <p className="text-xs text-gray-400 mt-4">
+            Supported: OBJ, GLB, GLTF, FBX, STL
+          </p>
+        )}
       </div>
+
+      {/* Uploading Progress */}
+      {isUploading && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+            <span className="text-sm text-blue-700 font-medium">
+              Uploading to server...
+            </span>
+          </div>
+          <p className="text-xs text-blue-600 mt-1">
+            Please wait while we process your 3D model
+          </p>
+        </div>
+      )}
 
       {/* Error */}
       {uploadStatus === "error" && (
