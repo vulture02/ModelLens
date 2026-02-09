@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
-import { User, Mail, Lock, Eye, EyeOff } from "lucide-react"
+import { User, Mail, Lock, Eye, EyeOff, Check, X } from "lucide-react"
 import api from "../lib/api"
 
 export default function RegisterPage() {
@@ -15,36 +15,118 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [searchParams]=useSearchParams()
-  const redirectUrl=searchParams.get("redirect_url");
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get("redirect_url")
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
+
+  // Password validation checks
+  const passwordChecks = {
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[@$!%*?&]/.test(password),
+  }
+
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrors({});
-    setIsLoading(true);
-    try{
+    setErrors({})
+    setIsLoading(true)
+    
+    try {
       await api.post("/api/register", {
         name,
         email,
         password,
-      });
-      const loginRes=await api.post("/api/login", {
+      })
+      const loginRes = await api.post("/api/login", {
         email,
-        password, 
-    });
-    localStorage.setItem("authToken", loginRes.data.token);
-    if (redirectUrl) {
-      navigate(decodeURIComponent(redirectUrl));
-    } else {
-      navigate("/dashboard");
+        password,
+      })
+      localStorage.setItem("authToken", loginRes.data.token)
+      if (redirectUrl) {
+        navigate(decodeURIComponent(redirectUrl))
+      } else {
+        navigate("/dashboard")
+      }
+    } catch (err: any) {
+      console.log("Full error:", err)
+      console.log("Error response:", err?.response)
+      console.log("Error response data:", err?.response?.data)
+
+      const response = err?.response?.data
+      const errorDetail = response?.detail
+
+      // Handle validation errors (array format from Pydantic)
+      if (Array.isArray(errorDetail)) {
+        const newErrors: Record<string, string> = {}
+
+        errorDetail.forEach((error: any) => {
+          const field = error.loc?.[1] // Get field name from ["body", "password"]
+          const message = error.msg || "Invalid input"
+
+          if (field === "email" || field === "password" || field === "name") {
+            newErrors[field] = message
+          }
+        })
+
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors)
+        } else {
+          setErrors({ email: "Validation failed" })
+        }
+      }
+      // Handle object error format (like {success: false, message: "..."})
+      else if (errorDetail && typeof errorDetail === "object") {
+        const backendMessage =
+          errorDetail.message ||
+          errorDetail.msg ||
+          response?.message ||
+          "Registration failed"
+
+        console.log("Extracted backend message:", backendMessage)
+
+        // Decide where to show error based on content
+        if (backendMessage.toLowerCase().includes("email")) {
+          setErrors({ email: backendMessage })
+        } else if (backendMessage.toLowerCase().includes("domain")) {
+          setErrors({ email: backendMessage })
+        } else if (backendMessage.toLowerCase().includes("password")) {
+          setErrors({ password: backendMessage })
+        } else if (backendMessage.toLowerCase().includes("name")) {
+          setErrors({ name: backendMessage })
+        } else {
+          setErrors({ email: backendMessage })
+        }
+      }
+      // Handle string error
+      else if (typeof errorDetail === "string") {
+        if (errorDetail.toLowerCase().includes("email")) {
+          setErrors({ email: errorDetail })
+        } else if (errorDetail.toLowerCase().includes("password")) {
+          setErrors({ password: errorDetail })
+        } else if (errorDetail.toLowerCase().includes("name")) {
+          setErrors({ name: errorDetail })
+        } else {
+          setErrors({ email: errorDetail })
+        }
+      }
+      // Fallback - check status text
+      else {
+        const statusCode = err?.response?.status
+        if (statusCode === 422) {
+          setErrors({ email: "Validation error. Please check your inputs." })
+        } else if (statusCode === 400) {
+          setErrors({ email: response?.message || "Registration failed" })
+        } else {
+          setErrors({ email: "Registration failed. Please try again." })
+        }
+      }
+    } finally {
+      setIsLoading(false)
     }
-  }catch(err:any){
-    setErrors({
-      general: err.response?.data?.message || "Registration failed",
-    });
-  }finally{
-    setIsLoading(false);
-  }
   }
 
   return (
@@ -77,11 +159,16 @@ export default function RegisterPage() {
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className={`pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
+                    errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  }`}
                 />
               </div>
               {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
+                <div className="flex items-start gap-1 mt-1">
+                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{errors.name}</p>
+                </div>
               )}
             </div>
 
@@ -97,11 +184,16 @@ export default function RegisterPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className={`pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
+                    errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  }`}
                 />
               </div>
               {errors.email && (
-                <p className="text-sm text-red-500">{errors.email}</p>
+                <div className="flex items-start gap-1 mt-1">
+                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{errors.email}</p>
+                </div>
               )}
             </div>
 
@@ -117,7 +209,10 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  onFocus={() => setShowPasswordRequirements(true)}
+                  className={`pl-10 pr-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
+                    errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  }`}
                 />
                 <button
                   type="button"
@@ -131,8 +226,41 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+
+              {/* Password Requirements */}
+              {showPasswordRequirements && password.length > 0 && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-1.5">
+                  <p className="text-xs font-medium text-gray-700 mb-2">
+                    Password must contain:
+                  </p>
+                  <PasswordRequirement
+                    met={passwordChecks.minLength}
+                    text="At least 8 characters"
+                  />
+                  <PasswordRequirement
+                    met={passwordChecks.hasUppercase}
+                    text="One uppercase letter"
+                  />
+                  <PasswordRequirement
+                    met={passwordChecks.hasLowercase}
+                    text="One lowercase letter"
+                  />
+                  <PasswordRequirement
+                    met={passwordChecks.hasNumber}
+                    text="One number"
+                  />
+                  <PasswordRequirement
+                    met={passwordChecks.hasSpecial}
+                    text="One special character (@$!%*?&)"
+                  />
+                </div>
+              )}
+
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password}</p>
+                <div className="flex items-start gap-1 mt-1">
+                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-600">{errors.password}</p>
+                </div>
               )}
             </div>
 
@@ -140,7 +268,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium mt-6"
+              className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -153,12 +281,35 @@ export default function RegisterPage() {
           {/* Login Link */}
           <p className="text-center text-gray-500 text-sm mt-6">
             Already have an account?{" "}
-            <a href="/login" className="text-blue-600 hover:underline font-medium">
+            <a
+              href="/login"
+              className="text-blue-600 hover:underline font-medium"
+            >
               Sign in
             </a>
           </p>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+// Helper component for password requirements
+function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {met ? (
+        <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+      ) : (
+        <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      )}
+      <span
+        className={`text-xs ${
+          met ? "text-green-700 font-medium" : "text-gray-600"
+        }`}
+      >
+        {text}
+      </span>
     </div>
   )
 }

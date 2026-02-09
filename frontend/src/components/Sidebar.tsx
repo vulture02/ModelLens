@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { Upload, X, AlertCircle } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle } from "lucide-react";
 import { useModel, type ModelType } from "../three/context/ModelContext";
 import api from "../lib/api";
 
@@ -12,9 +12,8 @@ interface SidebarProps {
 export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
+  const [uploadStatus, setUploadStatus] =
+    useState<"idle" | "success" | "error">("idle");
 
   const { setModel, clearModel } = useModel();
 
@@ -39,15 +38,18 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
 
       const response = await api.post("/api/models/upload", formData);
 
-      // ✅ CONFIRM BACKEND CONNECTION
+      // ✅ Backend confirmation
       console.log("Upload success:", response.data.success);
       console.log("Backend Model ID:", response.data.modelId);
       console.log("Uploaded file name:", file.name);
+
+      // persist last model
       localStorage.setItem("lastModelId", response.data.modelId);
       localStorage.setItem("lastModelExt", ext);
+
       onFileUpload(file);
 
-      // local preview only
+      // local preview (temporary)
       const url = URL.createObjectURL(file);
       setModel(url, ext as ModelType);
 
@@ -76,6 +78,8 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
     onFileUpload(null);
     clearModel();
     setUploadStatus("idle");
+    localStorage.removeItem("lastModelId");
+    localStorage.removeItem("lastModelExt");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -83,6 +87,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
     <aside className="w-full md:w-72 bg-white border-r border-gray-100 p-4">
       <h2 className="font-semibold text-gray-800 mb-4">Upload Model</h2>
 
+      {/* Upload Area */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -90,7 +95,7 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
         className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
           isDragging
             ? "border-blue-500 bg-blue-50"
-            : "border-gray-200 hover:border-gray-300 bg-gray-50"
+            : "border-gray-300 bg-gray-50"
         }`}
       >
         <input
@@ -101,30 +106,52 @@ export default function Sidebar({ onFileUpload, uploadedFile }: SidebarProps) {
           className="hidden"
         />
 
-        <Upload className="w-6 h-6 mx-auto mb-3 text-gray-400" />
+        <Upload className="w-10 h-10 mx-auto mb-3 text-gray-500" />
 
-        <Button onClick={() => fileInputRef.current?.click()}>
+        <p className="text-sm text-gray-600 mb-2">
+          Drag & drop your file here
+        </p>
+
+        <p className="text-xs text-gray-400 mb-4">or</p>
+
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer"
+        >
           Browse Files
         </Button>
+
+        <p className="text-xs text-gray-400 mt-4">
+          Supported: OBJ, GLB, GLTF, FBX, STL
+        </p>
       </div>
 
+      {/* Error */}
       {uploadStatus === "error" && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg flex gap-2">
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600">
           <AlertCircle className="w-4 h-4" />
-          Invalid file format or upload failed
+          <span className="text-sm">Invalid file format or upload failed</span>
         </div>
       )}
 
+      {/* Success */}
       {uploadedFile && uploadStatus === "success" && (
-        <div className="mt-4 p-3 bg-green-50 rounded-lg">
-          <div className="flex justify-between">
-            <span className="text-green-700 text-sm">Uploaded</span>
-            <button onClick={removeFile}>
+        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-700 font-medium">
+                Uploaded
+              </span>
+            </div>
+            <button onClick={removeFile} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-sm truncate">{uploadedFile.name}</p>
+          <p className="text-sm text-gray-700 truncate mt-2">
+            {uploadedFile.name}
+          </p>
         </div>
       )}
     </aside>

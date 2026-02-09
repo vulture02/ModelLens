@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button"
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react"
 import { useSearchParams } from "react-router-dom"  
 import api from "../lib/api"
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -33,9 +34,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     console.log("JWT token from backend:", res.data.token)
 
     if (redirectUrl) {
+      toast.success("Login successful");
       navigate(decodeURIComponent(redirectUrl));
     } else {
       navigate("/dashboard");
+      toast.success("Login successful");
     }
   } catch (err: any) {
     setErrors({

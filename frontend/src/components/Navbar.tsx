@@ -2,12 +2,14 @@
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "./ui/button"
 import { LogOut, Box } from "lucide-react"
+import toast from "react-hot-toast"
 
 export default function Navbar() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
     localStorage.removeItem("authToken")
+    toast.success("Logged out successfully");
     navigate("/login")
   }
 
