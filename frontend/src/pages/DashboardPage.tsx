@@ -103,7 +103,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Viewer Content */}
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <ModelViewer ref={modelViewerRef} />
               </div>
             </div>
