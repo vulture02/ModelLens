@@ -22,12 +22,6 @@ export default function Navbar() {
         </div>
         <span className="font-semibold text-gray-800">Meshmind</span>
       </Link>
-      <Link to="/dummy">
-        <Button variant="outline" className="mr-9">
-            About
-        </Button>
-      </Link>
-
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">
           Welcome back, {currentUser?.name || "User"}!

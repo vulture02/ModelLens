@@ -5,7 +5,6 @@ import DashboardPage from "../pages/DashboardPage"
 import RegisterPage from "../pages/RegisterPage"
 import NotFoundPage from "../pages/NotFoundPage"
 import LoginPage from "../pages/LoginPage"
-import RedirectDummyPage from "../pages/RedirectDummyPage"
 
 export default function AppRoutes() {
   return (
@@ -18,14 +17,6 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-       <Route
-        path="/dummy"
-        element={
-          <ProtectedRoute>
-            <RedirectDummyPage />
           </ProtectedRoute>
         }
       />
