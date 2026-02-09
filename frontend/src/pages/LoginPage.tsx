@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react"
 import { useSearchParams } from "react-router-dom"  
+import api from "../lib/api"
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -17,50 +18,34 @@ export default function LoginPage() {
   const [searchParams]=useSearchParams()
   const redirectUrl=searchParams.get("redirect_url");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const errs: Record<string, string> = {}
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setErrors({});
 
-    if (!email) errs.email = "Email is required"
-    if (!password) errs.password = "Password is required"
+  try {
+    const res = await api.post("/api/login", {
+      email,
+      password,
+    });
 
-    setErrors(errs)
+    localStorage.setItem("authToken", res.data.token);
+    console.log("JWT token from backend:", res.data.token)
 
-    if (Object.keys(errs).length === 0) {
-      setIsLoading(true)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Check if user exists in localStorage
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-      const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password)
-
-      if (user) {
-      // Generate dummy JWT-like token
-      const token = btoa(JSON.stringify({
-        userId: user.id,
-        email: user.email,
-        exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      }))
-
-      console.log("Generated JWT Token:", token)
-      console.log("Decoded Token Payload:", JSON.parse(atob(token)))
-
-      localStorage.setItem("authToken", token)
-      localStorage.setItem("currentUser", JSON.stringify(user))
-      if(redirectUrl){
-        navigate(decodeURIComponent(redirectUrl))
-      }else{
-        navigate("/dashboard")
-      }
-      } else {
-        setErrors({ general: "Invalid email or password" })
-      }
-
-      setIsLoading(false)
+    if (redirectUrl) {
+      navigate(decodeURIComponent(redirectUrl));
+    } else {
+      navigate("/dashboard");
     }
+  } catch (err: any) {
+    setErrors({
+      general: err.response?.data?.message || "Login failed",
+    });
+  } finally {
+    setIsLoading(false);
   }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">

@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { validateRegister } from "../utils/validation"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react"
+import api from "../lib/api"
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -20,44 +20,31 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const errs = validateRegister(name, email, password)
-    setErrors(errs)
-
-    if (Object.keys(errs).length === 0) {
-      setIsLoading(true)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Store user data
-      const users = JSON.parse(localStorage.getItem("users") || "[]")
-      const newUser = {
-        id: Date.now().toString(),
+    setErrors({});
+    setIsLoading(true);
+    try{
+      await api.post("/api/register", {
         name,
         email,
-        password // In real app, this would be hashed
-      }
-      users.push(newUser)
-      localStorage.setItem("users", JSON.stringify(users))
-
-      // Generate dummy JWT-like token
-      const token = btoa(JSON.stringify({
-        userId: newUser.id,
-        email: newUser.email,
-        exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      }))
-
-      console.log("Generated JWT Token:", token)
-      console.log("Decoded Token Payload:", JSON.parse(atob(token)))
-
-      localStorage.setItem("authToken", token)
-      localStorage.setItem("currentUser", JSON.stringify(newUser))
-      if(redirectUrl){
-        navigate(decodeURIComponent(redirectUrl))
-      }else{
-        navigate("/dashboard")
-      }
+        password,
+      });
+      const loginRes=await api.post("/api/login", {
+        email,
+        password, 
+    });
+    localStorage.setItem("authToken", loginRes.data.token);
+    if (redirectUrl) {
+      navigate(decodeURIComponent(redirectUrl));
+    } else {
+      navigate("/dashboard");
     }
+  }catch(err:any){
+    setErrors({
+      general: err.response?.data?.message || "Registration failed",
+    });
+  }finally{
+    setIsLoading(false);
+  }
   }
 
   return (
