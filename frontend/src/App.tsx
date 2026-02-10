@@ -4,7 +4,7 @@ import AppRoutes from './routes'
 const App = () => {
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
       <AppRoutes/>
     </>
   )
