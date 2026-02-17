@@ -1,41 +1,72 @@
-// components/Navbar.tsx
-import { Link, useNavigate } from "react-router-dom"
-import { Button } from "./ui/button"
-import { LogOut, Box } from "lucide-react"
-import toast from "react-hot-toast"
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Button } from "./ui/button";
+import { LogOut, Shield, ArrowLeft, Plus } from "lucide-react";
+import toast from "react-hot-toast";
 
-export default function Navbar() {
-  const navigate = useNavigate()
+interface NavbarProps {
+  onCreateProject?: () => void;
+}
+
+export default function Navbar({ onCreateProject }: NavbarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if we're on a project details page
+  const isProjectPage = location.pathname.includes("/project/");
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken")
+    localStorage.removeItem("authToken");
     toast.success("Logged out successfully");
-    navigate("/login")
-  }
-
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null")
+    navigate("/login");
+  };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-100">
-      <Link to="/dashboard" className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-          <Box className="w-5 h-5 text-white" />
+    <nav className="flex-shrink-0 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 relative z-50">
+      <div className="flex h-16 items-center justify-between px-6">
+        {/* Logo */}
+        <Link to="/dashboard" className="flex items-center space-x-2">
+          <div className="w-9 h-9 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center shadow-sm">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-bold text-xl text-gray-900">Meshmind</span>
+        </Link>
+
+        {/* Center Actions (only on project page) */}
+        {isProjectPage && (
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/dashboard")}
+              className="h-10 px-4 rounded-lg border-gray-200 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Button>
+
+            {onCreateProject && (
+              <Button
+                onClick={onCreateProject}
+                className="h-10 px-4 bg-black hover:bg-gray-800 text-white rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Project</span>
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Right Side */}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="h-10 px-4 rounded-lg border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </Button>
         </div>
-        <span className="font-semibold text-gray-800">Meshmind</span>
-      </Link>
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-600">
-          Welcome back, {currentUser?.name || "User"}!
-        </span>
-        <Button
-          variant="ghost"
-          onClick={handleLogout}
-          className="text-gray-500 hover:text-red-600 hover:bg-red-50"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
       </div>
     </nav>
-  )
+  );
 }

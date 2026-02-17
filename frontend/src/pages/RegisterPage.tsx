@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
-import { User, Mail, Lock, Eye, EyeOff, Check, X } from "lucide-react"
+import { User, Mail, Lock, Eye, EyeOff, X, Shield } from "lucide-react"
 import api from "../lib/api"
 
 export default function RegisterPage() {
@@ -17,24 +17,60 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [searchParams] = useSearchParams()
   const redirectUrl = searchParams.get("redirect_url")
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
 
-  // Password validation checks
-  const passwordChecks = {
-    minLength: password.length >= 8,
-    hasUppercase: /[A-Z]/.test(password),
-    hasLowercase: /[a-z]/.test(password),
-    hasNumber: /\d/.test(password),
-    hasSpecial: /[@$!%*?&]/.test(password),
+  // Password strength calculation
+  const getPasswordStrength = () => {
+    let strength = 0
+    if (password.length >= 8) strength++
+    if (/[A-Z]/.test(password)) strength++
+    if (/[a-z]/.test(password)) strength++
+    if (/\d/.test(password)) strength++
+    if (/[@$!%*?&]/.test(password)) strength++
+    return strength
   }
 
-  const isPasswordValid = Object.values(passwordChecks).every(Boolean)
+  const strength = getPasswordStrength()
+
+  const getStrengthLabel = () => {
+    if (password.length === 0) return { text: "", color: "bg-gray-200" }
+    if (strength <= 2) return { text: "Weak", color: "bg-red-500" }
+    if (strength <= 3) return { text: "Fair", color: "bg-yellow-500" }
+    if (strength <= 4) return { text: "Good", color: "bg-blue-500" }
+    return { text: "Strong", color: "bg-green-500" }
+  }
+
+  const strengthInfo = getStrengthLabel()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
-    setIsLoading(true)
     
+    // Frontend validation
+    const newErrors: Record<string, string> = {}
+    
+    // Check if name is empty
+    if (!name.trim()) {
+      newErrors.name = "Please enter your name"
+    }
+    
+    // Check if email is empty
+    if (!email.trim()) {
+      newErrors.email = "Please enter your email"
+    }
+    
+    // Check if password is empty
+    if (!password) {
+      newErrors.password = "Please enter a password"
+    }
+    
+    // If there are validation errors, show them and don't proceed
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    
+    setIsLoading(true)
+
     try {
       await api.post("/api/register", {
         name,
@@ -52,77 +88,33 @@ export default function RegisterPage() {
         navigate("/dashboard")
       }
     } catch (err: any) {
-      console.log("Full error:", err)
-      console.log("Error response:", err?.response)
-      console.log("Error response data:", err?.response?.data)
-
       const response = err?.response?.data
       const errorDetail = response?.detail
 
-      // Handle validation errors (array format from Pydantic)
       if (Array.isArray(errorDetail)) {
         const newErrors: Record<string, string> = {}
-
         errorDetail.forEach((error: any) => {
-          const field = error.loc?.[1] // Get field name from ["body", "password"]
+          const field = error.loc?.[1]
           const message = error.msg || "Invalid input"
-
           if (field === "email" || field === "password" || field === "name") {
             newErrors[field] = message
           }
         })
-
         if (Object.keys(newErrors).length > 0) {
           setErrors(newErrors)
         } else {
           setErrors({ email: "Validation failed" })
         }
-      }
-      // Handle object error format (like {success: false, message: "..."})
-      else if (errorDetail && typeof errorDetail === "object") {
-        const backendMessage =
-          errorDetail.message ||
-          errorDetail.msg ||
-          response?.message ||
-          "Registration failed"
-
-        console.log("Extracted backend message:", backendMessage)
-
-        // Decide where to show error based on content
-        if (backendMessage.toLowerCase().includes("email")) {
-          setErrors({ email: backendMessage })
-        } else if (backendMessage.toLowerCase().includes("domain")) {
-          setErrors({ email: backendMessage })
-        } else if (backendMessage.toLowerCase().includes("password")) {
-          setErrors({ password: backendMessage })
-        } else if (backendMessage.toLowerCase().includes("name")) {
-          setErrors({ name: backendMessage })
-        } else {
-          setErrors({ email: backendMessage })
-        }
-      }
-      // Handle string error
-      else if (typeof errorDetail === "string") {
+      } else if (typeof errorDetail === "string") {
         if (errorDetail.toLowerCase().includes("email")) {
           setErrors({ email: errorDetail })
         } else if (errorDetail.toLowerCase().includes("password")) {
           setErrors({ password: errorDetail })
-        } else if (errorDetail.toLowerCase().includes("name")) {
-          setErrors({ name: errorDetail })
         } else {
           setErrors({ email: errorDetail })
         }
-      }
-      // Fallback - check status text
-      else {
-        const statusCode = err?.response?.status
-        if (statusCode === 422) {
-          setErrors({ email: "Validation error. Please check your inputs." })
-        } else if (statusCode === 400) {
-          setErrors({ email: response?.message || "Registration failed" })
-        } else {
-          setErrors({ email: "Registration failed. Please try again." })
-        }
+      } else {
+        setErrors({ email: response?.message || "Registration failed" })
       }
     } finally {
       setIsLoading(false)
@@ -130,15 +122,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <Card className="w-full max-w-md shadow-xl border-0">
-        <CardHeader className="text-center pb-2">
-          {/* Logo */}
-          <div className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
-            <User className="w-7 h-7 text-white" />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 px-4">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
-          <CardTitle className="text-2xl font-bold text-gray-800">
+      <Card className="relative w-full max-w-md shadow-2xl border border-gray-200 bg-white/80 backdrop-blur-sm">
+        <CardHeader className="text-center pb-2">
+          {/* Updated Logo */}
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center mb-4 shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent"></div>
+            <Shield className="w-8 h-8 text-white relative z-10" />
+          </div>
+          
+          <CardTitle className="text-2xl font-bold text-gray-900">
             Create Account
           </CardTitle>
           <p className="text-gray-500 text-sm mt-1">
@@ -147,9 +142,9 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Full Name
               </label>
@@ -158,22 +153,27 @@ export default function RegisterPage() {
                 <Input
                   placeholder="John Doe"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={`pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.name ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    // Clear error when user starts typing
+                    if (errors.name) {
+                      setErrors(prev => ({ ...prev, name: "" }))
+                    }
+                  }}
+                  className={`pl-10 h-12 bg-gray-50 border-gray-200 rounded-xl focus:border-gray-900 focus:ring-gray-900 ${
+                    errors.name ? "border-red-500" : ""
                   }`}
                 />
               </div>
               {errors.name && (
-                <div className="flex items-start gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{errors.name}</p>
-                </div>
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <X className="w-3 h-3" /> {errors.name}
+                </p>
               )}
             </div>
 
             {/* Email Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Email Address
               </label>
@@ -183,22 +183,27 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    // Clear error when user starts typing
+                    if (errors.email) {
+                      setErrors(prev => ({ ...prev, email: "" }))
+                    }
+                  }}
+                  className={`pl-10 h-12 bg-gray-50 border-gray-200 rounded-xl focus:border-gray-900 focus:ring-gray-900 ${
+                    errors.email ? "border-red-500" : ""
                   }`}
                 />
               </div>
               {errors.email && (
-                <div className="flex items-start gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                </div>
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <X className="w-3 h-3" /> {errors.email}
+                </p>
               )}
             </div>
 
             {/* Password Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Password
               </label>
@@ -208,10 +213,15 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setShowPasswordRequirements(true)}
-                  className={`pl-10 pr-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    // Clear error when user starts typing
+                    if (errors.password) {
+                      setErrors(prev => ({ ...prev, password: "" }))
+                    }
+                  }}
+                  className={`pl-10 pr-10 h-12 bg-gray-50 border-gray-200 rounded-xl focus:border-gray-900 focus:ring-gray-900 ${
+                    errors.password ? "border-red-500" : ""
                   }`}
                 />
                 <button
@@ -227,40 +237,47 @@ export default function RegisterPage() {
                 </button>
               </div>
 
-              {/* Password Requirements */}
-              {showPasswordRequirements && password.length > 0 && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-1.5">
-                  <p className="text-xs font-medium text-gray-700 mb-2">
-                    Password must contain:
-                  </p>
-                  <PasswordRequirement
-                    met={passwordChecks.minLength}
-                    text="At least 8 characters"
-                  />
-                  <PasswordRequirement
-                    met={passwordChecks.hasUppercase}
-                    text="One uppercase letter"
-                  />
-                  <PasswordRequirement
-                    met={passwordChecks.hasLowercase}
-                    text="One lowercase letter"
-                  />
-                  <PasswordRequirement
-                    met={passwordChecks.hasNumber}
-                    text="One number"
-                  />
-                  <PasswordRequirement
-                    met={passwordChecks.hasSpecial}
-                    text="One special character (@$!%*?&)"
-                  />
-                </div>
-              )}
+              {/* Strength Bar + Requirement Message */}
+              <div className="space-y-1.5">
+                {/* Strength Bar - Always visible when typing */}
+                {password.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1 flex-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1.5 flex-1 rounded-full transition-all ${
+                            level <= strength ? strengthInfo.color : "bg-gray-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        strength <= 2
+                          ? "text-red-500"
+                          : strength <= 3
+                          ? "text-yellow-600"
+                          : strength <= 4
+                          ? "text-blue-500"
+                          : "text-green-500"
+                      }`}
+                    >
+                      {strengthInfo.text}
+                    </span>
+                  </div>
+                )}
+
+                {/* Requirement Message - Always visible */}
+                <p className="text-xs text-gray-400">
+                  Must be at least 8 characters with uppercase, lowercase, number & special character
+                </p>
+              </div>
 
               {errors.password && (
-                <div className="flex items-start gap-1 mt-1">
-                  <X className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{errors.password}</p>
-                </div>
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <X className="w-3 h-3" /> {errors.password}
+                </p>
               )}
             </div>
 
@@ -268,7 +285,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 bg-black hover:bg-gray-800 text-white font-semibold rounded-xl mt-6 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -278,38 +295,23 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          {/* Login Link */}
-          <p className="text-center text-gray-500 text-sm mt-6">
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-xs text-gray-400 font-medium">OR</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
+          <p className="text-center text-gray-500 text-sm">
             Already have an account?{" "}
             <a
               href="/login"
-              className="text-blue-600 hover:underline font-medium"
+              className="text-gray-900 hover:text-black font-semibold hover:underline"
             >
               Sign in
             </a>
           </p>
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-// Helper component for password requirements
-function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      {met ? (
-        <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-      ) : (
-        <X className="w-4 h-4 text-gray-400 flex-shrink-0" />
-      )}
-      <span
-        className={`text-xs ${
-          met ? "text-green-700 font-medium" : "text-gray-600"
-        }`}
-      >
-        {text}
-      </span>
     </div>
   )
 }

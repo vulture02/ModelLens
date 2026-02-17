@@ -1,30 +1,35 @@
-import { Routes, Route, Navigate } from "react-router-dom"
-import MeshPOCPage from "../pages/MeshPOCPage"
+import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
 
-import ProtectedRoute from "./ProtectedRoute"
-import DashboardPage from "../pages/DashboardPage"
-import RegisterPage from "../pages/RegisterPage"
-import NotFoundPage from "../pages/NotFoundPage"
-import LoginPage from "../pages/LoginPage"
+import RegisterPage from "../pages/RegisterPage";
+import NotFoundPage from "../pages/NotFoundPage";
+import LoginPage from "../pages/LoginPage";
+
+import DashboardListPage from "../pages/DashboardListPage";
+import ProjectDetailsPage from "../pages/ProjectDetailsPage";
+import MeshPOCPage from "../pages/MeshPOCPage";
 
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Default */}
       <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/login" element={<LoginPage/>} />
+
+      {/* Auth */}
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      
+      {/* Dashboard */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DashboardListPage />
           </ProtectedRoute>
         }
       />
 
-      {/* NEW ROUTE */}
+      {/* Mesh POC */}
       <Route
         path="/mesh-poc"
         element={
@@ -34,9 +39,18 @@ export default function AppRoutes() {
         }
       />
 
+      {/* Project Viewer */}
+      <Route
+        path="/project/:id"
+        element={
+          <ProtectedRoute>
+            <ProjectDetailsPage />
+          </ProtectedRoute>
+        }
+      />
 
-
+      {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
-  )
+  );
 }
