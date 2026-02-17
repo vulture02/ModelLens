@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom"
+import MeshPOCPage from "../pages/MeshPOCPage"
 
 import ProtectedRoute from "./ProtectedRoute"
 import DashboardPage from "../pages/DashboardPage"
@@ -12,6 +13,8 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<LoginPage/>} />
       <Route path="/register" element={<RegisterPage />} />
+
+      
       <Route
         path="/dashboard"
         element={
@@ -20,6 +23,19 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* NEW ROUTE */}
+      <Route
+        path="/mesh-poc"
+        element={
+          <ProtectedRoute>
+            <MeshPOCPage />
+          </ProtectedRoute>
+        }
+      />
+
+
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
